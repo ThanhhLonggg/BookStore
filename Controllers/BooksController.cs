@@ -42,7 +42,7 @@ namespace BookStore.Controllers
                 var book = await _context.Books
                     .FirstOrDefaultAsync(m => m.Id == id);
 
-                var speakerViewModel = new BookModel()
+                var BookViewModel = new BookModel()
                 {
                     Id = book.Id,
                     Title = book.Title,
@@ -64,7 +64,7 @@ namespace BookStore.Controllers
                 throw;
             }
         }
-        [Authorize(Roles ="ADMIN")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
             return View();
@@ -72,7 +72,7 @@ namespace BookStore.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Image,Description,Category,Price")] BookModel model)
+        public async Task<IActionResult> Create(BookModel model)
         {
             try
             {
@@ -123,7 +123,7 @@ namespace BookStore.Controllers
             {
                 return NotFound();
             }
-            return View(BookViewModel); 
+            return View(BookViewModel);
         }
 
         [HttpPost]

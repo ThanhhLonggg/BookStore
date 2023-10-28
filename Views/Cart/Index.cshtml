@@ -1,0 +1,46 @@
+﻿@model BookStore.Models.Cart
+
+<h2>Cart</h2>
+
+@if (Model.CartDetails != null && Model.CartDetails.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Book</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total Price</th>
+               @*  <th>Update</th> *@
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cartDetail in Model.CartDetails)
+            {
+                <tr>
+                    <td>@cartDetail.Book.Title</td>
+                    <td>
+                        <form asp-controller="Cart" asp-action="UpdateQuantity" method="post">
+                            <input type="hidden" name="cartDetailId" value="@cartDetail.CartDetailId" />
+                            <input type="number" name="quantity" value="@cartDetail.Quantity" min="1" />
+                            <button type="submit">Edit</button>
+                        </form>
+                    </td>
+                    <td>@cartDetail.TotalPrice</td>
+                    <td>@(cartDetail.TotalPrice * cartDetail.Quantity)</td>
+                    <td>
+                        <form asp-controller="Cart" asp-action="RemoveFromCart" method="post">
+                            <input type="hidden" name="cartDetailId" value="@cartDetail.CartDetailId" />
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <h3>Total Price: @Model.CartDetails.Sum(cd => cd.TotalPrice * cd.Quantity)</h3>
+}
+else
+{
+    <p>Your cart is empty.</p>
+}

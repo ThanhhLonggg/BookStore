@@ -1,126 +1,105 @@
-﻿using BookStore.Data;
-using BookStore.Models;
+﻿using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
+using BookStore.Models;
+using BookStore.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookStore.Controllers
 {
-    public class CartsController : Controller
+    public class CartController : Controller
     {
-        private readonly ApplicationDbContext db;
-       
-        //add cart
-        public IActionResult addCart(int id)
+        private readonly ApplicationDbContext _context;
+
+        public CartController(ApplicationDbContext context)
         {
-            var cart = HttpContext.Session.GetString("cart");
-            if (cart == null)
+            _context = context;
+        }
+
+        [Authorize]
+        // Hiển thị giỏ hàng của người dùng
+        public IActionResult Index(string userId)
+        {
+            var cart = _context.Carts
+                .Include(c => c.CartDetails)
+                .ThenInclude(cd => cd.Book)
+                .FirstOrDefault(c => c.UserId == userId);
+
+            return View(cart);
+        }
+
+        [Authorize]
+        // Thêm sách vào giỏ hàng
+        [HttpPost]
+        public IActionResult AddToCart(int bookId, string userId, int quantity)
+        {
+            //var book = _context.Books.FirstOrDefault(b => b.Id == bookId);
+            //if (book == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //var cart = _context.Carts
+            //    .Include(c => c.CartDetails)
+            //    .ThenInclude(cd => cd.Book)
+            //    .FirstOrDefault(c => c.UserId == userId);
+
+            //if (cart == null)
+            //{
+            //    cart = new Cart { UserId = userId };
+            //    _context.Carts.Add(cart);
+            //}
+
+            var cartDetail = _context.CartDetails.FirstOrDefault(cd => cd.BookId == bookId && cd.UserId == userId);
+            if (cartDetail == null)
             {
-                var book = getDetailBook(id);
-                List<Cart> listCart = new List<Cart>()
+                cartDetail = new CartDetail
                 {
-                    new Cart
-                    {
-                        Book= book,
-                        Quantity = 1
-                    }
+                    BookId = bookId,
+                    UserId = userId,
+                    Quantity = quantity,
+                    
                 };
-                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(listCart));
+                _context.CartDetails.Add(cartDetail);
             }
             else
             {
-                List<Cart> dataCart = JsonConvert.DeserializeObject<List<Cart>>(cart);
-                bool check = true;
-                for (int i = 0; i < dataCart.Count; i++)
-                {
-                    if (dataCart[i].Book.Id == id)
-                    {
-                        dataCart[i].Quantity++;
-                        check = false;
-                    }
-                    if (check)
-                    {
-                        dataCart.Add(new Cart
-                        {
-                            Book = getDetailBook(id),
-                            Quantity = 1
-                        });
-                    }
-                }
-                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
+                cartDetail.Quantity += quantity;
             }
-            return RedirectToAction(nameof(ListCart));
-        }
-        public IActionResult deleteCart(int id)
-        {
-            var cart = HttpContext.Session.GetString("cart");
-            if (cart != null)
-            {
-                List<Cart> dataCart = JsonConvert.DeserializeObject<List<Cart>>(cart);
-                for (int i = 0; i < dataCart.Count; i++)
-                {
-                    if (dataCart[i].Book.Id == id)
-                    {
-                        dataCart.RemoveAt(i);
-                    }
-                    HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
-                    return RedirectToAction(nameof(ListCart));
-                }
-            }
-            return RedirectToAction(nameof(Index));
-        }
-        public IActionResult ListCart()
-        {
-            var cart = HttpContext.Session.GetString("cart");
-            if (cart != null)
-            {
-                List<Cart> dataCart = JsonConvert.DeserializeObject<List<Cart>>(cart);
 
-                if (dataCart.Count > 0)
-                {
-                    ViewBag.carts = dataCart;
-                    return View();
-                }
-            }
-            return RedirectToAction(nameof(Index));
+            _context.SaveChanges();
+
+            return RedirectToAction("Index", new { UserId = userId });
         }
+
+        [Authorize]
+        // Xóa sách khỏi giỏ hàng
         [HttpPost]
-        public IActionResult updateCart(int id, int quantity)
+        public IActionResult RemoveFromCart(int cartDetailId)
         {
-            var cart = HttpContext.Session.GetString("cart");
-            if (cart != null)
+            var cartDetail = _context.CartDetails.FirstOrDefault(cd => cd.CartDetailId == cartDetailId);
+            if (cartDetail != null)
             {
-                List<Cart> dataCart = JsonConvert.DeserializeObject<List<Cart>>(cart);
-                if (quantity > 0)
-                {
-                    for (int i = 0; i < dataCart.Count; i++)
-                    {
-                        if (dataCart[i].Book.Id == id)
-                        {
-                            dataCart[i].Quantity = quantity;
-                        }
-                        HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
-
-                    }
-                }
-                return Ok(quantity);
+                _context.CartDetails.Remove(cartDetail);
+                _context.SaveChanges();
             }
-            return BadRequest();
+
+            return RedirectToAction("Index", new { userId = cartDetail.UserId });
         }
-        public Book getDetailBook(int id)
+
+        [Authorize]
+        // Cập nhật số lượng sách trong giỏ hàng
+        [HttpPost]
+        public IActionResult UpdateQuantity(int cartDetailId, int quantity)
         {
-            var book = db.Books.Find(id);
-            return book;
-        }
-        public IActionResult Index()
-        {
-            var _book = getAllBook();
-            ViewBag.book = _book;
-            return View();
-        }
-        public List<Book> getAllBook()
-        {
-            return db.Books.ToList();
+            var cartDetail = _context.CartDetails.FirstOrDefault(cd => cd.CartDetailId == cartDetailId);
+            if (cartDetail != null)
+            {
+                cartDetail.Quantity = quantity;
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Index", new { userId = cartDetail.UserId });
         }
     }
 }

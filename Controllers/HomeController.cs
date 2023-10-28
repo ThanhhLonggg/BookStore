@@ -21,8 +21,9 @@ namespace BookStore.Controllers
 
         public IActionResult Index()
         {
-            var book = db.Books.ToList();
-            return View(book);
+            ViewBag.book = db.Books.ToList();
+            //var book = db.Books.ToList();
+            return View();
         }
     }
 }

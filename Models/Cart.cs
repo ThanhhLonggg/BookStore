@@ -1,11 +1,15 @@
-﻿
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookStore.Models
 {
     public class Cart
     {
-        public Book Book { get; set; }
+        [Key]
+        public int CartId { get; set; }
 
-        public int Quantity { get; set; }
+        public string UserId { get; set; } 
+
+        public virtual ICollection<CartDetail> CartDetails { get; set; }
     }
 }

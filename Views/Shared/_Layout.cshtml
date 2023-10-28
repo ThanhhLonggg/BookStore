@@ -23,9 +23,9 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="ListCart">Cart</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Carts" asp-action="Index">Cart</a>
                         </li>
-                        @if (User.IsInRole("ADMIN"))
+                        @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Books" asp-action="Index">Admin</a>
@@ -51,6 +51,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    
 </body>
 </html>
+@await RenderSectionAsync("Scripts", required: false)
